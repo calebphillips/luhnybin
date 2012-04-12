@@ -1,0 +1,62 @@
+(ns luhnybin.test.core
+  (:use [luhnybin.core])
+  (:use [clojure.test]))
+
+(deftest test-str->ints
+  (are [ints string] (= ints (str->ints string))
+       [5 6 7 8] "5678"
+       [1 2 3 4 5 4 3 2 1] "123454321"))
+
+(deftest test-double-every-second
+  (are [x y] (= (reverse x) (double-every-second y))
+       [1 4 3 8 5] [1 2 3 4 5]
+       [10 6 14 8] [5 6 7 8]))
+
+(deftest test-ints->digits
+  (are [digits ints] (= digits (ints->digits ints))
+       [1 3 4 6 5 9 7 1 9 5 2] [13 4 65 9 7 19 52]))
+
+(deftest test-luhny?
+  (are [s] (luhny? s)
+       "5678"
+       "4563960122001999"
+       "378282246310005"
+       "30569309025904"
+       "40000000003030"
+       "6011000990139424"
+       "5555555555554444"
+       "4012888888881881"
+       "5019717010103742")
+  (is (not (luhny? "6789"))))
+
+(deftest test-partition-ignoring
+  (is (= [[[1 2 :w :x 3] 0]
+          [[2 :w :x 3 :y :x 4] 1]
+          [[:w :x 3 :y :x 4 5] 2]
+          [[:x 3 :y :x 4 5] 3]
+          [[3 :y :x 4 5] 4]
+          [[:y :x 4 5 :w 6] 5]
+          [[:x 4 5 :w 6] 6]
+          [[4 5 :w 6] 7]
+          ]
+         (partition-ignoring 3 1 #{:w :x :y}
+                             [1 2 :w :x 3 :y :x 4 5 :w 6]))))
+
+(deftest test-cc?
+  (is (cc? "4563960122001999"))
+  (is (cc? (interleave "4563960122001999"
+                       (repeat \-)
+                       (repeat \space))))
+  (is (not (cc? "ABCABCABCABCABC"))))
+
+(deftest test-mask?
+  (is (= "We did some stuff and then went over to the place with that and bought a pizza with XXXXXXXXXXXXXXXX but then I called XXXX XXXX-XXXX XXXX"
+         (mask
+          "We did some stuff and then went over to the place with that and bought a pizza with 6011000990139424 but then I called 4012 8888-8888 1881")))
+  (is (= "Hi XXXXXXXXXXXXXX" (mask "Hi 30569309025904")))
+  (is (= "XXXXX XXXXX XXXXX" (mask "37828 22463 10005")))
+  ;; Two overlapping 14 digit numbers
+  (is (= "XXXX XXXX XXXX XX XXXXXXXXXXXXX" (mask "3056 9309 0259 04 0000000003030")))
+  (is (= "LF only ->\n<- LF only" (mask "LF only ->\n<- LF only")))
+  (is (= "987XXXXXXXXXXXXXXXX321" (mask "9875610591081018250321")))
+  (is (= (apply str (repeat 1000 0)) (apply str (repeat 1000 0)))))
